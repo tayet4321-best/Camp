@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Browse Camplugie</title>
+<style>
+:root {
+  --brand: #A78BFA;
+  --brand-dark: #7C3AED;
+  --text: #F8F6FF;
+  --text2: #C9C3DE;
+  --text3: #8D86AA;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+  background: radial-gradient(circle at 30% 0%, rgba(255,255,255,0.10), transparent 45%), linear-gradient(160deg, #6D28D9 0%, #7C3AED 42%, #9333EA 100%);
+  color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  padding: calc(var(--safe-top) + 20px) 20px calc(var(--safe-bottom) + 20px);
+}
+.browse-card {
+  width: 100%; max-width: 420px; text-align: center;
+}
+.browse-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: rgba(255,255,255,0.75); text-decoration: none; font-size: 13.5px; font-weight: 600;
+  margin-bottom: 22px;
+}
+.browse-emoji { font-size: 40px; margin-bottom: 6px; }
+h1 {
+  font-size: 24px; font-weight: 900; margin: 0 0 8px; letter-spacing: -0.01em;
+}
+p.sub {
+  font-size: 14px; color: rgba(255,255,255,0.8); line-height: 1.5; margin: 0 0 28px;
+}
+select {
+  width: 100%; background: rgba(255,255,255,0.95); color: #1A1729;
+  border: none; border-radius: 14px; padding: 16px; font-size: 15px; font-weight: 700;
+  margin-bottom: 14px; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237C3AED' stroke-width='3'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 16px center;
+}
+button#continueBtn {
+  width: 100%; border: none; border-radius: 999px; padding: 16px;
+  background: #fff; color: var(--brand-dark); font-size: 15.5px; font-weight: 800;
+  cursor: pointer; box-shadow: 0 10px 26px rgba(0,0,0,0.2);
+}
+button#continueBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+.browse-foot { margin-top: 22px; font-size: 13px; color: rgba(255,255,255,0.7); }
+.browse-foot a { color: #fff; font-weight: 700; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="browse-card">
+  <a class="browse-back" href="index.html">&larr; Back</a>
+  <div class="browse-emoji">🎓</div>
+  <h1>Which campus are you browsing?</h1>
+  <p class="sub">Pick your school to see what's on sale — no account needed.</p>
+
+  <select id="uniSelect">
+    <option value="">Loading campuses…</option>
+  </select>
+  <button id="continueBtn" disabled>Continue</button>
+
+  <div class="browse-foot">Buying or selling for real? <a href="auth.html?view=signup">Sign up free</a></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const SUPABASE_URL = 'https://zgzamthhfykhjaldosvb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnemFtdGhoZnlraGphbGRvc3ZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0Nzc2NjksImV4cCI6MjA5NDA1MzY2OX0.YpH9Zn2a2XVDZnZIlWd4d4CxhUbkURZ_H7Yegw9vih4';
+window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const select = document.getElementById('uniSelect');
+const continueBtn = document.getElementById('continueBtn');
+
+(async () => {
+  const { data: unis, error } = await window.sb.from('universities').select('id, name').order('name');
+  if (error) {
+    select.innerHTML = '<option value="">Could not load campuses — try again</option>';
+    console.error('University load error:', error);
+    return;
+  }
+  select.innerHTML = '<option value="">Select your school…</option>' +
+    (unis || []).map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+
+  // Remember the last pick so returning guests skip straight past this page.
+  const saved = localStorage.getItem('cp_guest_university_id');
+  if (saved && unis?.some(u => u.id === saved)) select.value = saved;
+  continueBtn.disabled = !select.value;
+})();
+
+select.addEventListener('change', () => { continueBtn.disabled = !select.value; });
+
+continueBtn.addEventListener('click', () => {
+  if (!select.value) return;
+  localStorage.setItem('cp_guest_university_id', select.value);
+  window.location.href = `market.html?uni=${encodeURIComponent(select.value)}`;
+});
+</script>
+</body>
+</html>
